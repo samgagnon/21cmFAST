@@ -849,7 +849,7 @@ void set_halo_properties(float halo_mass, float M_turn_a, float M_turn_m, float 
     //NOTE: we don't want an upturn even with a negative ALPHA_STAR
     if(astro_params_stoc->ALPHA_STAR > -0.61){
         fstar_mean = f10 * exp(-M_turn_a/halo_mass) * pow(2.6e11/1e10,astro_params_stoc->ALPHA_STAR);
-        fstar_mean /= pow(halo_mass/2.6e11,-astro_params_stoc->ALPHA_STAR) + pow(halo_mass/2.6e11,0.61);
+        fstar_mean /= pow(halo_mass/2.8e11,-astro_params_stoc->ALPHA_STAR) + pow(halo_mass/2.8e11,0.61);
     }
     else{
         fstar_mean = f10 * pow(halo_mass/1e10,fa) * exp(-M_turn_a/halo_mass);
@@ -2314,7 +2314,9 @@ int my_visible_function(struct UserParams *user_params, struct CosmoParams *cosm
         //Since the conditional MF is press-schecter, we rescale by a factor equal to the ratio of the collapsed fractions (n_order == 1) of the UMF
         double ps_ratio = 1.;
         if(!hs_constants->update && user_params->HMF!=0){
+            lnMcond = hs_constants->lnM_cond; //set if not update
             ps_ratio = IntegratedNdM(growth_out,lnMmin,lnMcond,lnMcond,0,1,0,0) / IntegratedNdM(growth_out,lnMmin,lnMcond,lnMcond,0,1,user_params->HMF,0);
+            LOG_DEBUG("Using PS ratio of %.2f",ps_ratio);
         }
 
         if(type==0){
@@ -2326,7 +2328,7 @@ int my_visible_function(struct UserParams *user_params, struct CosmoParams *cosm
             bool cmf_flag = seed==0;
 
             //parameters for CMF
-            double prefactor = cmf_flag ? RHOcrit / sqrt(2.*PI) * cosmo_params_stoc->OMm : 1.;
+            double prefactor = cmf_flag ? RHOcrit / ps_ratio * (2.*PI) * cosmo_params_stoc->OMm : 1.;
             double dummy;
             struct parameters_gsl_MF_con_int_ parameters_gsl_MF_con = {
                 .redshift = z_out,
@@ -2342,7 +2344,7 @@ int my_visible_function(struct UserParams *user_params, struct CosmoParams *cosm
             #pragma omp parallel for private(test)
             for(i=0;i<n_mass;i++){
                 //conditional ps mass func * pow(M,n_order)
-                if((M[i] < Mmin) || M[i] > MMAX_TABLES || (!cmf_flag && M[i] > Mcond)){
+                if((M[i] < Mmin) || M[i] > MMAX_TABLES || (cmf_flag && M[i] > Mcond)){
                     test = 0.;
                 }
                 else{

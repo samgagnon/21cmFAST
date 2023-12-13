@@ -3562,6 +3562,7 @@ def run_lightcone(
         hbox = None
 
         perturb_files = []
+        pth_files = []
         spin_temp_files = []
         ionize_files = []
         brightness_files = []
@@ -3691,6 +3692,7 @@ def run_lightcone(
             perturb_files.append((z, os.path.join(direc, pf2.filename)))
             if flag_options.USE_HALO_FIELD:
                 hbox_files.append((z,os.path.join(direc,hbox2.filename)))
+                pth_files.append((z,os.path.join(direc,ph.filename)))
             if flag_options.USE_TS_FLUCT:
                 spin_temp_files.append((z, os.path.join(direc, st2.filename)))
             ionize_files.append((z, os.path.join(direc, ib2.filename)))
@@ -3699,7 +3701,7 @@ def run_lightcone(
             outs = {
                 "PerturbedField": (pf, pf2),
                 "IonizedBox": (ib, ib2),
-                "BrightnessTemp": (bt, bt2),
+                "BrightnessTemp": (bt, bt2)
             }
             if flag_options.USE_TS_FLUCT:
                 outs["TsBox"] = (st, st2)
@@ -3771,7 +3773,7 @@ def run_lightcone(
             and lib.interpolation_tables_allocated
         ):
             lib.FreeTsInterpolationTables(flag_options())
-
+        
         out = (
             LightCone(
                 redshift,
@@ -3790,6 +3792,7 @@ def run_lightcone(
                     "perturb_field": perturb_files,
                     "ionized_box": ionize_files,
                     "brightness_temp": brightness_files,
+                    "perturb_halo_field": pth_files,
                     "spin_temp": spin_temp_files,
                     "halobox": hbox_files,
                 },
@@ -3798,6 +3801,10 @@ def run_lightcone(
             ),
             coeval_callback_output,
         )
+
+        # save pth_files
+        np.savetxt("./pth_filenames.txt", pth_files, fmt='%s')
+
         if coeval_callback is None:
             return out[0]
         else:
